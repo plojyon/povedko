@@ -11,8 +11,32 @@ if (!TOKEN) {
     console.error('Missing TOKEN in .env file');
     process.exit(1);
 }
-const NONCE = '648a3e53a5'; // replace with a valid nonce
 const PREFIX = "!povejmi ";
+
+// const NONCE = '648a3e53a5'; // replace with a valid nonce
+let NONCE = 'invalid_nonce';
+
+async function refreshNonce() {
+    try {
+        const res = await fetch('https://povejmo.si/');
+        const html = await res.text();
+
+        const match = html.match(/"nonce"\s*:\s*"([a-zA-Z0-9]+)"/);
+        if (match) {
+            NONCE = match[1];
+            console.log(`[Nonce Updated] New NONCE: ${NONCE}`);
+        } else {
+            console.warn('[Nonce Error] Could not find nonce in page.');
+        }
+    } catch (err) {
+        console.error('[Nonce Fetch Error]', err);
+    }
+}
+
+// refresh nonce every 10 minutes
+setInterval(refreshNonce, 10 * 60 * 1000);
+refreshNonce(); // immediate call at startup
+
 
 client.on('ready', () => {
     console.log(`Logged in as ${client.user.tag}`);
