@@ -6,7 +6,11 @@ const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBit
 
 require('dotenv').config(); // Add this at the top
 
-const TOKEN = process.env.DISCORD_TOKEN;
+const TOKEN = process.env.TOKEN;
+if (!TOKEN) {
+    console.error('Missing TOKEN in .env file');
+    process.exit(1);
+}
 const NONCE = '648a3e53a5'; // replace with a valid nonce
 const PREFIX = "!povejmi ";
 
@@ -19,6 +23,8 @@ client.on('messageCreate', async message => {
     if (!message.content.startsWith(PREFIX)) return;
 
     const content = message.content.slice(PREFIX.length).trim();
+
+    await message.channel.sendTyping(); // Show typing indicator
 
     const payload = new URLSearchParams();
     payload.append('_ajax_nonce', NONCE);
