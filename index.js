@@ -40,9 +40,14 @@ client.on('messageCreate', async message => {
 
         const json = await res.json();
         if (json.success && json.data && json.data.content) {
-            message.channel.send(json.data.content);
+            if (json.data.content.length > 3000) {
+                return message.channel.send("... cuius rei responsionem mirabilem sane detexi. Hanc marginis exiguitas non caperet.");
+            }
+            else {
+                message.channel.send(json.data.content);
+            }
         } else {
-            message.channel.send('Napaka pri pridobivanju odgovora.');
+            message.channel.send('API je mrtev kot dodo.');
         }
     } catch (err) {
         console.error(err);
