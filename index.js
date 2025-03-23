@@ -2,7 +2,17 @@ const { Client, GatewayIntentBits } = require('discord.js');
 // const fetch = require('node-fetch');
 const fetch = (...args) => import('node-fetch').then(mod => mod.default(...args));
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
+const { Partials } = require('discord.js');
+
+const client = new Client({
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent,
+        GatewayIntentBits.DirectMessages, // <-- this one
+    ],
+    partials: [Partials.Channel], // Correct way to specify partials
+});
 
 require('dotenv').config(); // Add this at the top
 
@@ -44,16 +54,20 @@ client.on('ready', () => {
 
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
-    if (!message.content.startsWith(PREFIX)) return;
 
-    const content = message.content.slice(PREFIX.length).trim();
+    const isDM = message.channel.type === 1 || message.guild === null; // DM Channel
+    const isPrefixed = message.content.startsWith(PREFIX);
 
-    await message.channel.sendTyping(); // Show typing indicator
+    if (!isDM && !isPrefixed) return;
+
+    const content = isPrefixed ? message.content.slice(PREFIX.length).trim() : message.content.trim();
+
+    await message.channel.sendTyping();
 
     const payload = new URLSearchParams();
     payload.append('_ajax_nonce', NONCE);
     payload.append('action', 'get_response');
-    payload.append('messages', JSON.stringify([{ role: 'user', content: content }]));
+    payload.append('messages', JSON.stringify([{ role: 'user', content }]));
 
     try {
         const res = await fetch('https://povejmo.si/wp-admin/admin-ajax.php', {
@@ -66,8 +80,7 @@ client.on('messageCreate', async message => {
         if (json.success && json.data && json.data.content) {
             if (json.data.content.length > 3000) {
                 return message.channel.send("... cuius rei responsionem mirabilem sane detexi. Hanc marginis exiguitas non caperet.");
-            }
-            else {
+            } else {
                 message.channel.send(json.data.content);
             }
         } else {
@@ -78,5 +91,6 @@ client.on('messageCreate', async message => {
         message.channel.send('Napaka pri pošiljanju zahteve.');
     }
 });
+
 
 client.login(TOKEN);
