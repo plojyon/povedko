@@ -28,12 +28,15 @@ let NONCE = 'invalid_nonce';
 
 async function refreshNonce() {
     try {
-        const res = await fetch('https://povejmo.si/');
+        const cheerio = await import('cheerio');
+        const res = await fetch('https://povejmo.si/klepet/');
         const html = await res.text();
 
-        const match = html.match(/"nonce"\s*:\s*"([a-zA-Z0-9]+)"/);
-        if (match) {
-            NONCE = match[1];
+        const $ = cheerio.load(html);
+        const nonce = $('input[name="_wpnonce"]').val();
+
+        if (nonce) {
+            NONCE = nonce;
             console.log(`[Nonce Updated] New NONCE: ${NONCE}`);
         } else {
             console.warn('[Nonce Error] Could not find nonce in page.');
@@ -70,7 +73,7 @@ client.on('messageCreate', async message => {
     payload.append('messages', JSON.stringify([{ role: 'user', content }]));
 
     try {
-        const res = await fetch('https://povejmo.si/wp-admin/admin-ajax.php', {
+        const res = await fetch('https://povejmo.si/api/gams/v1/create', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
             body: payload.toString()
@@ -78,8 +81,8 @@ client.on('messageCreate', async message => {
 
         const json = await res.json();
         if (json.success && json.data && json.data.content) {
-            if (json.data.content.length > 3000) {
-                return message.channel.send("... cuius rei responsionem mirabilem sane detexi. Hanc marginis exiguitas non caperet.");
+            if (json.data.content.length > 2000) {
+                return message.channel.send("Sori, sm zaceu ful razmisljat in je Discord reku da rabim nitro.");
             } else {
                 message.channel.send(json.data.content);
             }

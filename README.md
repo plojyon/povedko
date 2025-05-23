@@ -2,12 +2,14 @@
 
 Discord bot, povezan s [povejmo.si](https://povejmo.si/klepet/).
 
-![Demo image](./demo.png)
-
 .env
 ```
-TOKEN=your_token
+TOKEN=your_discord_api_token
 ```
 
+## Primeri uporabe
+![Demo image 1](./demo1.png)
+![Demo image 2](./demo2.png)
+![Demo image 3](./demo3.png)
+![Demo image 4](./demo4.png)
 
-Note: this is a product of *vibe coding*. I didn't read the code.
