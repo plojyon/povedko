@@ -1,29 +1,29 @@
 const { Client, GatewayIntentBits } = require('discord.js');
-// const fetch = require('node-fetch');
 const fetch = (...args) => import('node-fetch').then(mod => mod.default(...args));
 
 const { Partials } = require('discord.js');
 
-const client = new Client({
-    intents: [
-        GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.MessageContent,
-        GatewayIntentBits.DirectMessages, // <-- this one
-    ],
-    partials: [Partials.Channel], // Correct way to specify partials
-});
-
-require('dotenv').config(); // Add this at the top
+require('dotenv').config();
 
 const TOKEN = process.env.TOKEN;
 if (!TOKEN) {
     console.error('Missing TOKEN in .env file');
     process.exit(1);
 }
-const PREFIX = "!povejmi ";
+const PREFIX = process.env.PREFIX + " ";
+const SYSTEM_MSG = process.env.SYSTEM_MSG || "";
 
-// const NONCE = '648a3e53a5'; // replace with a valid nonce
+const client = new Client({
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent,
+        GatewayIntentBits.DirectMessages,
+    ],
+    partials: [Partials.Channel],
+});
+
+
 let NONCE = 'invalid_nonce';
 
 async function refreshNonce() {
@@ -36,8 +36,10 @@ async function refreshNonce() {
         const nonce = $('input[name="_wpnonce"]').val();
 
         if (nonce) {
-            NONCE = nonce;
-            console.log(`[Nonce Updated] New NONCE: ${NONCE}`);
+            if (nonce !== NONCE) {
+                NONCE = nonce;
+                console.log(`[Nonce Updated] New NONCE: ${NONCE}`);
+            }
         } else {
             console.warn('[Nonce Error] Could not find nonce in page.');
         }
@@ -58,19 +60,25 @@ client.on('ready', () => {
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
-    const isDM = message.channel.type === 1 || message.guild === null; // DM Channel
+    const isDM = message.channel.type === 1 || message.guild === null;
     const isPrefixed = message.content.startsWith(PREFIX);
 
     if (!isDM && !isPrefixed) return;
 
-    const content = isPrefixed ? message.content.slice(PREFIX.length).trim() : message.content.trim();
-
     await message.channel.sendTyping();
+
+    const messages = [];
+    if (SYSTEM_MSG.length > 0) {
+        messages.push({ role: 'user', content: SYSTEM_MSG });
+        messages.push({ role: 'assistant', content: "V redu, bom upošteval tvoje navodilo." });
+    }
+    const content = isPrefixed ? message.content.slice(PREFIX.length).trim() : message.content.trim();
+    messages.push({ role: 'user', content: content });
 
     const payload = new URLSearchParams();
     payload.append('_ajax_nonce', NONCE);
     payload.append('action', 'get_response');
-    payload.append('messages', JSON.stringify([{ role: 'user', content }]));
+    payload.append('messages', JSON.stringify(messages));
 
     try {
         const res = await fetch('https://povejmo.si/api/gams/v1/create', {

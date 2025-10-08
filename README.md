@@ -5,6 +5,8 @@ Discord bot, povezan s [povejmo.si](https://povejmo.si/klepet/).
 .env
 ```
 TOKEN=your_discord_api_token
+PREFIX=!povejmi
+SYSTEM_MSG=Odgovarjaj samo s slovenskimi pregovori.
 ```
 
 ## Primeri uporabe
